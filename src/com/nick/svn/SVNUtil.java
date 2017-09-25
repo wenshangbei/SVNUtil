@@ -1,8 +1,13 @@
 package com.nick.svn;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import javax.swing.plaf.basic.BasicInternalFrameTitlePane.MoveAction;
 
@@ -25,14 +30,34 @@ import org.tmatesoft.svn.core.wc.admin.SVNLookClient;
 import org.tmatesoft.svn.core.wc2.SvnTarget;
 
 public  class SVNUtil {
+	
+	
+	private static String username = null;
+	private static String password = null;
+	static {
+		try {
+			Properties prop = new Properties();
+			InputStream in = new BufferedInputStream(new FileInputStream("svnconfig.properties")) ;
+			prop.load(in);
+			
+			username = (String) prop.get("username");
+			password = (String) prop.get("password");
+			
+			
+			
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 
-	static String svnRoot = "http://172.19.13.219/svn/LeoProject/NickTest";
-	static String name = "acn_nickwen";
-	static String password = "Init@0310";
 	
 	public static void main(String[] args) {
+		String resourcePath = "";
+		String targetPath = "";
 		try {
-			moveFile();
+			moveFile(resourcePath, targetPath);
 		} catch (SVNException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -42,6 +67,10 @@ public  class SVNUtil {
 	
 	static private SVNClientManager clientManager;
 
+	/**
+	 * 
+	 * @return
+	 */
 	private static SVNClientManager getSVNClientManager() {
 
 		if (clientManager == null) {
@@ -51,40 +80,39 @@ public  class SVNUtil {
 
 				ISVNOptions options = SVNWCUtil.createDefaultOptions(true);
 				
-				clientManager = SVNClientManager.newInstance((DefaultSVNOptions) options, name, password);
+				clientManager = SVNClientManager.newInstance((DefaultSVNOptions) options, username, password);
 			}
 		}
 
 		return clientManager;
 	}
 	
-	public static void moveFile() throws SVNException {
+	/**
+	 * 
+	 * @param sourcePath
+	 * @param targetPath
+	 * @throws SVNException
+	 */
+	public static void moveFile(String sourcePath, String targetPath) throws SVNException {
 		
 		SVNClientManager svnClientManager = getSVNClientManager();
 		
+		SVNCopySource svnCopySource = null;
+		
+		svnCopySource = new SVNCopySource(SVNRevision.HEAD,SVNRevision.HEAD,SVNURL.parseURIEncoded(sourcePath));
 
 		
-		SVNCopySource svnCopySource1 = null;
+		SVNCopySource[] sources = new SVNCopySource[] {svnCopySource};
 		
-		svnCopySource1 = new SVNCopySource(SVNRevision.HEAD,SVNRevision.HEAD,SVNURL.parseURIEncoded("http://172.19.13.219/svn/LeoProject/NickTest/testmove1"));
-
-		
-		SVNCopySource[] sources = new SVNCopySource[] {svnCopySource1};
-		SVNURL dst = null;
-		
-		dst = SVNURL.parseURIEncoded("http://172.19.13.219/svn/LeoProject/NickTest/testmove2");
+		SVNURL dst = SVNURL.parseURIEncoded(targetPath);
 	
-		Map<SvnTarget, List<SVNExternal>> revisionProperties;
-		
-		
-		
 		SVNCopyClient copyClient = svnClientManager.getCopyClient();
 		
 		
 		boolean isMove = true;
 		boolean makeParents  = false;
 		boolean failWhenDstExists = false;
-		String commitMessage = "tst";
+		String commitMessage = "archive files";
 		SVNCommitInfo info = copyClient.doCopy(sources, dst, isMove,  makeParents, failWhenDstExists, commitMessage, new SVNProperties());
 		
 		
